@@ -1,0 +1,9 @@
+{
+    "lib": "libvart-dpu-runner.so",
+    "filename": "zdce.xmodel",
+    "kernel": [
+        "subgraph_ZeroDCEQ__1338",
+        "subgraph_ZeroDCEQ__1278"
+    ],
+    "target": "DPUCZDX8G_ISA1_B4096"
+}

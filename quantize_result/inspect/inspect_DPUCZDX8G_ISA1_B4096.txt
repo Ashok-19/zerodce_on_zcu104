@@ -1,0 +1,1561 @@
+# The 'inspect.txt' file is used to show all the details of each operation in NN model.
+# Field Description:
+# target info: target device information.
+# inspection summary: summary report of inspection# graph name: The name of graph representing of the NN model.
+# node name: The name of node in graph.
+# input nodes: The parents of the node.
+# output nodes: The children of node.
+# op type: The type of operation.
+# output shape: The shape of node output tensor(Data layout follows XIR requirements).
+# op attributes: The attributes of operation.(The description is consistent with that of XIR)
+# assigend device: The device type on which the operation execute.
+# hardware constrains: If the operation is assigned to cpu. This filed will give some hits about why the DPU does not support this operation.
+# node messages: This filed will give some extra information about the node.(For example, if quantizer need to insert a permute operation to convert data layout from 'NCHW' to 'NHWC' or from 'NCHW' to 'NHWC' for deployment. This message will be add to node_messages.)
+# source range: points to a source which is a stack track and helps to find the exact location of this operation in source code.
+
+# Hints:
+# Due to data layout difference between Pytorch('NCHW') and XIR('NHWC'), 
+# if quantizer inserts some permutes(which the node message will inform us about),
+# these permutes may prevent the entire model from being deployed to the target device.
+# Sometimes, we can cancel out this automatically inserted permute by inserting a permute in the original float model,
+# sometimes, we can't.
+# These two examples are used to demonstrated this problem:
+# Example 1:
+# Pytorch: conv:[1, 64, 1, 1] -> reshape(shape=(1, -1):[1, 64] =>
+# Xmodel: conv:[1, 1, 1, 64] -> permute(order=(0, 3, 1, 2)):[1, 64, 1, 1] -> reshape(shape=(1, -1):[1, 64]
+# Insert a permute in the original float model:
+# Pytorch: conv:[1, 64, 1, 1] -> permute(order=(0, 2, 3, 1)):[1, 1, 1, 64] -> reshape(shape=(1, -1):[1, 64] =>
+# Xmodel: conv:[1, 1, 1, 64] -> reshape(shape=(1, -1):[1, 64]
+# In example 1, the permute inserted by quantizer can be canceled out by inserting a permute in float model. 
+# After model modification, output shape and data memory layout are the same compared with before.
+# Example 2:
+# Pytorch: conv:[1, 3, 4, 4] -> reshape(shape=(1, -1):[1, 48] =>
+# Xmodel: conv:[1, 4, 4, 3] -> permute(order=(0, 3, 1, 2)):[1, 3, 4, 4] -> reshape(shape=(1, -1):[1, 48]
+# Insert a permute in the original float model:
+# Pytorch: conv:[1, 3, 4, 4] -> permute(order=(0, 2, 3, 1)):[1, 4, 4, 3] -> reshape(shape=(1, -1):[1, 48] =>
+# Xmodel: conv:[1, 4, 4, 3] -> reshape(shape=(1, -1):[1, 48]
+# In example 2, the permute inserted by quantizer can't be canceled out by inserting a permute in float model. 
+# After model modification, output data memory layout changed.
+# Explanation of some hardware constraints messages:
+  "Try to assign {pattern name} to DPU failed.": The compiler refuses to deploy this pattern on DPU.
+  "Convert nndct graph to XIR failed.": If you encounter this problem, please contact the developer.
+  "{op type} can't be converted to XIR.": The operator cannot be represented by XIR.
+  "{op type} can't be assigned to DPU.": Although the operator can be converted to XIR, it cannot be deployed on the DPU.
+  
+================================================================================================================================================================
+target info:
+================================================================================================================================================================
+DPUCZDX8G_ISA1_B4096
+
+================================================================================================================================================================
+inspection summary:
+================================================================================================================================================================
+The operators assigned to the CPU are as follows:
+node name                                              op Type       hardware constraints
+-----------------------------------------------------  ------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ZeroDCEQ::ZeroDCEQ/UpsamplingBilinear2d[upsample]/inp  nndct_resize  xir::Op{name = ZeroDCEQ__ZeroDCEQ_UpsamplingBilinear2d_upsample__inp, type = upsample-fix} has been assigned to CPU: [DPU does not support align_corners = true.].
+ZeroDCEQ::ZeroDCEQ/7324                                tensor_mul    tensor_mul can't be converted to XIR.
+ZeroDCEQ::ZeroDCEQ/7354                                tensor_mul    tensor_mul can't be converted to XIR.
+================================================================================================================================================================
+graph name: ZeroDCEQ
+================================================================================================================================================================
+node name: ZeroDCEQ::7440
+input nodes: []
+output nodes: ['ZeroDCEQ::ZeroDCEQ/7441']
+op type: nndct_const
+outputs shape: [1, 64, 64, 3]
+op attributes:
+  data: [[[[2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]
+   ...
+   [2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]]
+
+  [[2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]
+   ...
+   [2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]]
+
+  [[2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]
+   ...
+   [2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]]
+
+  ...
+
+  [[2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]
+   ...
+   [2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]]
+
+  [[2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]
+   ...
+   [2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]]
+
+  [[2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]
+   ...
+   [2. 2. 2.]
+   [2. 2. 2.]
+   [2. 2. 2.]]]]
+assigned device: dpu
+source range:
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(110): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::7444
+input nodes: []
+output nodes: ['ZeroDCEQ::ZeroDCEQ/7445']
+op type: nndct_const
+outputs shape: [1, 512, 512, 3]
+op attributes:
+  data: [[[[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]
+
+  [[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]
+
+  [[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]
+
+  ...
+
+  [[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]
+
+  [[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]
+
+  [[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]]]
+assigned device: dpu
+source range:
+zdce.py(36): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::7442
+input nodes: []
+output nodes: ['ZeroDCEQ::ZeroDCEQ/input']
+op type: nndct_const
+outputs shape: [1, 64, 64, 3]
+op attributes:
+  data: [[[[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]
+
+  [[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]
+
+  [[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]
+
+  ...
+
+  [[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]
+
+  [[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]
+
+  [[-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   ...
+   [-1. -1. -1.]
+   [-1. -1. -1.]
+   [-1. -1. -1.]]]]
+assigned device: dpu
+source range:
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(110): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::input_0
+input nodes: []
+output nodes: ['ZeroDCEQ::ZeroDCEQ/input.1', 'ZeroDCEQ::ZeroDCEQ/7324', 'ZeroDCEQ::ZeroDCEQ/7324', 'ZeroDCEQ::ZeroDCEQ/7445', 'ZeroDCEQ::ZeroDCEQ/7381']
+op type: nndct_input
+outputs shape: [1, 512, 512, 3]
+op attributes:
+assigned device: user
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/input.1
+input nodes: ['ZeroDCEQ::input_0']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[depth_conv]/input.3']
+op type: nndct_resize
+outputs shape: [1, 64, 64, 3]
+op attributes:
+  size: [0, 0]
+  scale: [0.125, 0.125]
+  align_corners: False
+  half_pixel_centers: True
+  mode: BILINEAR
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/functional.py(3938): interpolate
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(101): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[depth_conv]/input.3
+input nodes: ['ZeroDCEQ::ZeroDCEQ/input.1']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[point_conv]/input.5']
+op type: nndct_depthwise_conv2d
+outputs shape: [1, 64, 64, 3]
+op attributes:
+  kernel: [3, 3]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [1, 1, 1, 1]
+  group: 3
+  bias_term: True
+  in_dim: 3
+  out_dim: 3
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(36): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(103): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[point_conv]/input.5
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[depth_conv]/input.3']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.7']
+op type: nndct_conv2d
+outputs shape: [1, 64, 64, 32]
+op attributes:
+  kernel: [1, 1]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [0, 0, 0, 0]
+  group: 1
+  bias_term: True
+  in_dim: 3
+  out_dim: 32
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(37): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(103): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.7
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[point_conv]/input.5']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[depth_conv]/input.9', 'ZeroDCEQ::ZeroDCEQ/input.37']
+op type: nndct_relu
+outputs shape: [1, 64, 64, 32]
+op attributes:
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/functional.py(1455): relu
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/activation.py(98): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(103): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[depth_conv]/input.9
+input nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.7']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[point_conv]/input.11']
+op type: nndct_depthwise_conv2d
+outputs shape: [1, 64, 64, 32]
+op attributes:
+  kernel: [3, 3]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [1, 1, 1, 1]
+  group: 32
+  bias_term: True
+  in_dim: 32
+  out_dim: 32
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(36): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(104): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[point_conv]/input.11
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[depth_conv]/input.9']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.13']
+op type: nndct_conv2d
+outputs shape: [1, 64, 64, 32]
+op attributes:
+  kernel: [1, 1]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [0, 0, 0, 0]
+  group: 1
+  bias_term: True
+  in_dim: 32
+  out_dim: 32
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(37): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(104): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.13
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[point_conv]/input.11']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[depth_conv]/input.15', 'ZeroDCEQ::ZeroDCEQ/input.31']
+op type: nndct_relu
+outputs shape: [1, 64, 64, 32]
+op attributes:
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/functional.py(1455): relu
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/activation.py(98): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(104): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[depth_conv]/input.15
+input nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.13']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[point_conv]/input.17']
+op type: nndct_depthwise_conv2d
+outputs shape: [1, 64, 64, 32]
+op attributes:
+  kernel: [3, 3]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [1, 1, 1, 1]
+  group: 32
+  bias_term: True
+  in_dim: 32
+  out_dim: 32
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(36): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(105): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[point_conv]/input.17
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[depth_conv]/input.15']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.19']
+op type: nndct_conv2d
+outputs shape: [1, 64, 64, 32]
+op attributes:
+  kernel: [1, 1]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [0, 0, 0, 0]
+  group: 1
+  bias_term: True
+  in_dim: 32
+  out_dim: 32
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(37): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(105): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.19
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[point_conv]/input.17']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[depth_conv]/input.21', 'ZeroDCEQ::ZeroDCEQ/input.25']
+op type: nndct_relu
+outputs shape: [1, 64, 64, 32]
+op attributes:
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/functional.py(1455): relu
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/activation.py(98): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(105): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[depth_conv]/input.21
+input nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.19']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[point_conv]/input.23']
+op type: nndct_depthwise_conv2d
+outputs shape: [1, 64, 64, 32]
+op attributes:
+  kernel: [3, 3]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [1, 1, 1, 1]
+  group: 32
+  bias_term: True
+  in_dim: 32
+  out_dim: 32
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(36): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(106): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[point_conv]/input.23
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[depth_conv]/input.21']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4182']
+op type: nndct_conv2d
+outputs shape: [1, 64, 64, 32]
+op attributes:
+  kernel: [1, 1]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [0, 0, 0, 0]
+  group: 1
+  bias_term: True
+  in_dim: 32
+  out_dim: 32
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(37): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(106): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4182
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[point_conv]/input.23']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/input.25']
+op type: nndct_relu
+outputs shape: [1, 64, 64, 32]
+op attributes:
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/functional.py(1455): relu
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/activation.py(98): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(106): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/input.25
+input nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.19', 'ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4182']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[depth_conv]/input.27']
+op type: nndct_concat
+outputs shape: [1, 64, 64, 64]
+op attributes:
+  axis: 3
+assigned device: dpu
+source range:
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(107): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[depth_conv]/input.27
+input nodes: ['ZeroDCEQ::ZeroDCEQ/input.25']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[point_conv]/input.29']
+op type: nndct_depthwise_conv2d
+outputs shape: [1, 64, 64, 64]
+op attributes:
+  kernel: [3, 3]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [1, 1, 1, 1]
+  group: 64
+  bias_term: True
+  in_dim: 64
+  out_dim: 64
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(36): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(107): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[point_conv]/input.29
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[depth_conv]/input.27']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4224']
+op type: nndct_conv2d
+outputs shape: [1, 64, 64, 32]
+op attributes:
+  kernel: [1, 1]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [0, 0, 0, 0]
+  group: 1
+  bias_term: True
+  in_dim: 64
+  out_dim: 32
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(37): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(107): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4224
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[point_conv]/input.29']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/input.31']
+op type: nndct_relu
+outputs shape: [1, 64, 64, 32]
+op attributes:
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/functional.py(1455): relu
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/activation.py(98): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(107): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/input.31
+input nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.13', 'ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4224']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[depth_conv]/input.33']
+op type: nndct_concat
+outputs shape: [1, 64, 64, 64]
+op attributes:
+  axis: 3
+assigned device: dpu
+source range:
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(108): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[depth_conv]/input.33
+input nodes: ['ZeroDCEQ::ZeroDCEQ/input.31']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[point_conv]/input.35']
+op type: nndct_depthwise_conv2d
+outputs shape: [1, 64, 64, 64]
+op attributes:
+  kernel: [3, 3]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [1, 1, 1, 1]
+  group: 64
+  bias_term: True
+  in_dim: 64
+  out_dim: 64
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(36): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(108): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[point_conv]/input.35
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[depth_conv]/input.33']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4266']
+op type: nndct_conv2d
+outputs shape: [1, 64, 64, 32]
+op attributes:
+  kernel: [1, 1]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [0, 0, 0, 0]
+  group: 1
+  bias_term: True
+  in_dim: 64
+  out_dim: 32
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(37): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(108): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4266
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[point_conv]/input.35']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/input.37']
+op type: nndct_relu
+outputs shape: [1, 64, 64, 32]
+op attributes:
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/functional.py(1455): relu
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/activation.py(98): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(108): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/input.37
+input nodes: ['ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.7', 'ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4266']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[depth_conv]/input.39']
+op type: nndct_concat
+outputs shape: [1, 64, 64, 64]
+op attributes:
+  axis: 3
+assigned device: dpu
+source range:
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(109): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[depth_conv]/input.39
+input nodes: ['ZeroDCEQ::ZeroDCEQ/input.37']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[point_conv]/4307']
+op type: nndct_depthwise_conv2d
+outputs shape: [1, 64, 64, 64]
+op attributes:
+  kernel: [3, 3]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [1, 1, 1, 1]
+  group: 64
+  bias_term: True
+  in_dim: 64
+  out_dim: 64
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(36): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(109): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[point_conv]/4307
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[depth_conv]/input.39']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/4308']
+op type: nndct_conv2d
+outputs shape: [1, 64, 64, 3]
+op attributes:
+  kernel: [1, 1]
+  stride: [1, 1]
+  dilation: [1, 1]
+  pad_mode: 0
+  pad: [0, 0, 0, 0]
+  group: 1
+  bias_term: True
+  in_dim: 64
+  out_dim: 3
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(454): _conv_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/conv.py(457): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(37): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(109): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/4308
+input nodes: ['ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[point_conv]/4307']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/7441']
+op type: nndct_hsigmoid
+outputs shape: [1, 64, 64, 3]
+op attributes:
+assigned device: dpu
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/functional.py(1983): hardsigmoid
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(109): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/7441
+input nodes: ['ZeroDCEQ::ZeroDCEQ/4308', 'ZeroDCEQ::7440']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/input']
+op type: nndct_elemwise_mul
+outputs shape: [1, 64, 64, 3]
+op attributes:
+assigned device: dpu
+source range:
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(110): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/input
+input nodes: ['ZeroDCEQ::ZeroDCEQ/7441', 'ZeroDCEQ::7442']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/UpsamplingBilinear2d[upsample]/inp']
+op type: nndct_elemwise_add
+outputs shape: [1, 64, 64, 3]
+op attributes:
+assigned device: dpu
+source range:
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(110): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/UpsamplingBilinear2d[upsample]/inp
+input nodes: ['ZeroDCEQ::ZeroDCEQ/input']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/7354']
+op type: nndct_resize
+outputs shape: [1, 512, 512, 3]
+op attributes:
+  size: [0, 0]
+  scale: [8.0, 8.0]
+  align_corners: True
+  half_pixel_centers: False
+  mode: BILINEAR
+assigned device: cpu
+hardware constraints: xir::Op{name = ZeroDCEQ__ZeroDCEQ_UpsamplingBilinear2d_upsample__inp, type = upsample-fix} has been assigned to CPU: [DPU does not support align_corners = true.].
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/functional.py(3938): interpolate
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/upsampling.py(154): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/workspace/src/vai_quantizer/vai_q_pytorch/zdce_extension/model.py(116): forward
+zdce.py(30): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/7324
+input nodes: ['ZeroDCEQ::input_0', 'ZeroDCEQ::input_0']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/diff']
+op type: tensor_mul
+outputs shape: [1, 512, 512, 3]
+op attributes:
+assigned device: cpu
+hardware constraints: tensor_mul can't be converted to XIR.
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/op_register.py(102): innner
+zdce.py(35): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/7445
+input nodes: ['ZeroDCEQ::input_0', 'ZeroDCEQ::7444']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/diff']
+op type: nndct_elemwise_mul
+outputs shape: [1, 512, 512, 3]
+op attributes:
+assigned device: dpu
+source range:
+zdce.py(36): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/diff
+input nodes: ['ZeroDCEQ::ZeroDCEQ/7324', 'ZeroDCEQ::ZeroDCEQ/7445']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/7354']
+op type: nndct_elemwise_add
+outputs shape: [1, 512, 512, 3]
+op attributes:
+assigned device: dpu
+source range:
+zdce.py(36): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/7354
+input nodes: ['ZeroDCEQ::ZeroDCEQ/UpsamplingBilinear2d[upsample]/inp', 'ZeroDCEQ::ZeroDCEQ/diff']
+output nodes: ['ZeroDCEQ::ZeroDCEQ/7381']
+op type: tensor_mul
+outputs shape: [1, 512, 512, 3]
+op attributes:
+assigned device: cpu
+hardware constraints: tensor_mul can't be converted to XIR.
+source range:
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/op_register.py(102): innner
+zdce.py(37): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+
+================================================================================================================================================================
+node name: ZeroDCEQ::ZeroDCEQ/7381
+input nodes: ['ZeroDCEQ::input_0', 'ZeroDCEQ::ZeroDCEQ/7354']
+output nodes: ['ZeroDCEQ::return_0']
+op type: nndct_elemwise_add
+outputs shape: [1, 512, 512, 3]
+op attributes:
+assigned device: dpu
+source range:
+zdce.py(38): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1118): _slow_forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1148): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(118): wrapper
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(132): forward
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/nn/modules/module.py(1130): _call_impl
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/torch/jit/_trace.py(1175): _get_trace_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/utils/jit_utils.py(396): trace_and_get_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(101): _trace_graph_from_model
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(56): _get_fw_graph_from_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/trace_helper.py(74): build_torch_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/parse/parser.py(71): __call__
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(89): parse_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/qproc/utils.py(229): prepare_quantizable_module
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/utils.py(30): prepare_deployable_graph
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/hardware_v3/inspector.py(52): inspect
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.7/site-packages/pytorch_nndct/apis.py(196): inspect
+zdce.py(118): main
+zdce.py(158): <module>
+

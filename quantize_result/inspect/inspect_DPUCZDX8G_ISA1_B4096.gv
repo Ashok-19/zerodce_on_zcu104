@@ -1,0 +1,198 @@
+digraph ZeroDCEQ {
+	7440 [label="type:nndct_const
+name:ZeroDCEQ::7440
+assigned device:dpu
+out shape:[[1, 64, 64, 3]]" color=blue]
+	7444 [label="type:nndct_const
+name:ZeroDCEQ::7444
+assigned device:dpu
+out shape:[[1, 512, 512, 3]]" color=blue]
+	7442 [label="type:nndct_const
+name:ZeroDCEQ::7442
+assigned device:dpu
+out shape:[[1, 64, 64, 3]]" color=blue]
+	input_0 [label="type:nndct_input
+name:ZeroDCEQ::input_0
+assigned device:user
+out shape:[[1, 512, 512, 3]]" color=black]
+	"ZeroDCEQ/input.1" [label="type:nndct_resize
+name:ZeroDCEQ::ZeroDCEQ/input.1
+assigned device:dpu
+out shape:[[1, 64, 64, 3]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[depth_conv]/input.3" [label="type:nndct_depthwise_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[depth_conv]/input.3
+assigned device:dpu
+out shape:[[1, 64, 64, 3]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[point_conv]/input.5" [label="type:nndct_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[point_conv]/input.5
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/ReLU[relu]/input.7" [label="type:nndct_relu
+name:ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.7
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[depth_conv]/input.9" [label="type:nndct_depthwise_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[depth_conv]/input.9
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[point_conv]/input.11" [label="type:nndct_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[point_conv]/input.11
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/ReLU[relu]/input.13" [label="type:nndct_relu
+name:ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.13
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[depth_conv]/input.15" [label="type:nndct_depthwise_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[depth_conv]/input.15
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[point_conv]/input.17" [label="type:nndct_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[point_conv]/input.17
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/ReLU[relu]/input.19" [label="type:nndct_relu
+name:ZeroDCEQ::ZeroDCEQ/ReLU[relu]/input.19
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[depth_conv]/input.21" [label="type:nndct_depthwise_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[depth_conv]/input.21
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[point_conv]/input.23" [label="type:nndct_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[point_conv]/input.23
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/ReLU[relu]/4182" [label="type:nndct_relu
+name:ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4182
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/input.25" [label="type:nndct_concat
+name:ZeroDCEQ::ZeroDCEQ/input.25
+assigned device:dpu
+out shape:[[1, 64, 64, 64]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[depth_conv]/input.27" [label="type:nndct_depthwise_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[depth_conv]/input.27
+assigned device:dpu
+out shape:[[1, 64, 64, 64]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[point_conv]/input.29" [label="type:nndct_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[point_conv]/input.29
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/ReLU[relu]/4224" [label="type:nndct_relu
+name:ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4224
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/input.31" [label="type:nndct_concat
+name:ZeroDCEQ::ZeroDCEQ/input.31
+assigned device:dpu
+out shape:[[1, 64, 64, 64]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[depth_conv]/input.33" [label="type:nndct_depthwise_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[depth_conv]/input.33
+assigned device:dpu
+out shape:[[1, 64, 64, 64]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[point_conv]/input.35" [label="type:nndct_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[point_conv]/input.35
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/ReLU[relu]/4266" [label="type:nndct_relu
+name:ZeroDCEQ::ZeroDCEQ/ReLU[relu]/4266
+assigned device:dpu
+out shape:[[1, 64, 64, 32]]" color=blue]
+	"ZeroDCEQ/input.37" [label="type:nndct_concat
+name:ZeroDCEQ::ZeroDCEQ/input.37
+assigned device:dpu
+out shape:[[1, 64, 64, 64]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[depth_conv]/input.39" [label="type:nndct_depthwise_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[depth_conv]/input.39
+assigned device:dpu
+out shape:[[1, 64, 64, 64]]" color=blue]
+	"ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[point_conv]/4307" [label="type:nndct_conv2d
+name:ZeroDCEQ::ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[point_conv]/4307
+assigned device:dpu
+out shape:[[1, 64, 64, 3]]" color=blue]
+	"ZeroDCEQ/4308" [label="type:nndct_hsigmoid
+name:ZeroDCEQ::ZeroDCEQ/4308
+assigned device:dpu
+out shape:[[1, 64, 64, 3]]" color=blue]
+	"ZeroDCEQ/7441" [label="type:nndct_elemwise_mul
+name:ZeroDCEQ::ZeroDCEQ/7441
+assigned device:dpu
+out shape:[[1, 64, 64, 3]]" color=blue]
+	"ZeroDCEQ/input" [label="type:nndct_elemwise_add
+name:ZeroDCEQ::ZeroDCEQ/input
+assigned device:dpu
+out shape:[[1, 64, 64, 3]]" color=blue]
+	"ZeroDCEQ/UpsamplingBilinear2d[upsample]/inp" [label="type:nndct_resize
+name:ZeroDCEQ::ZeroDCEQ/UpsamplingBilinear2d[upsample]/inp
+assigned device:cpu
+out shape:[[1, 512, 512, 3]]" color=red]
+	"ZeroDCEQ/7324" [label="type:tensor_mul
+name:ZeroDCEQ::ZeroDCEQ/7324
+assigned device:cpu
+out shape:[[1, 512, 512, 3]]" color=red]
+	"ZeroDCEQ/7445" [label="type:nndct_elemwise_mul
+name:ZeroDCEQ::ZeroDCEQ/7445
+assigned device:dpu
+out shape:[[1, 512, 512, 3]]" color=blue]
+	"ZeroDCEQ/diff" [label="type:nndct_elemwise_add
+name:ZeroDCEQ::ZeroDCEQ/diff
+assigned device:dpu
+out shape:[[1, 512, 512, 3]]" color=blue]
+	"ZeroDCEQ/7354" [label="type:tensor_mul
+name:ZeroDCEQ::ZeroDCEQ/7354
+assigned device:cpu
+out shape:[[1, 512, 512, 3]]" color=red]
+	"ZeroDCEQ/7381" [label="type:nndct_elemwise_add
+name:ZeroDCEQ::ZeroDCEQ/7381
+assigned device:dpu
+out shape:[[1, 512, 512, 3]]" color=blue]
+	return_0 [label="type:nndct_return
+name:ZeroDCEQ::return_0
+assigned device:user
+out shape:[]" color=black]
+	7440 -> "ZeroDCEQ/7441"
+	7444 -> "ZeroDCEQ/7445"
+	7442 -> "ZeroDCEQ/input"
+	input_0 -> "ZeroDCEQ/input.1"
+	input_0 -> "ZeroDCEQ/7324"
+	input_0 -> "ZeroDCEQ/7324"
+	input_0 -> "ZeroDCEQ/7445"
+	input_0 -> "ZeroDCEQ/7381"
+	"ZeroDCEQ/input.1" -> "ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[depth_conv]/input.3"
+	"ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[depth_conv]/input.3" -> "ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[point_conv]/input.5"
+	"ZeroDCEQ/CSDN_Tem[e_conv1]/Conv2d[point_conv]/input.5" -> "ZeroDCEQ/ReLU[relu]/input.7"
+	"ZeroDCEQ/ReLU[relu]/input.7" -> "ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[depth_conv]/input.9"
+	"ZeroDCEQ/ReLU[relu]/input.7" -> "ZeroDCEQ/input.37"
+	"ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[depth_conv]/input.9" -> "ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[point_conv]/input.11"
+	"ZeroDCEQ/CSDN_Tem[e_conv2]/Conv2d[point_conv]/input.11" -> "ZeroDCEQ/ReLU[relu]/input.13"
+	"ZeroDCEQ/ReLU[relu]/input.13" -> "ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[depth_conv]/input.15"
+	"ZeroDCEQ/ReLU[relu]/input.13" -> "ZeroDCEQ/input.31"
+	"ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[depth_conv]/input.15" -> "ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[point_conv]/input.17"
+	"ZeroDCEQ/CSDN_Tem[e_conv3]/Conv2d[point_conv]/input.17" -> "ZeroDCEQ/ReLU[relu]/input.19"
+	"ZeroDCEQ/ReLU[relu]/input.19" -> "ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[depth_conv]/input.21"
+	"ZeroDCEQ/ReLU[relu]/input.19" -> "ZeroDCEQ/input.25"
+	"ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[depth_conv]/input.21" -> "ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[point_conv]/input.23"
+	"ZeroDCEQ/CSDN_Tem[e_conv4]/Conv2d[point_conv]/input.23" -> "ZeroDCEQ/ReLU[relu]/4182"
+	"ZeroDCEQ/ReLU[relu]/4182" -> "ZeroDCEQ/input.25"
+	"ZeroDCEQ/input.25" -> "ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[depth_conv]/input.27"
+	"ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[depth_conv]/input.27" -> "ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[point_conv]/input.29"
+	"ZeroDCEQ/CSDN_Tem[e_conv5]/Conv2d[point_conv]/input.29" -> "ZeroDCEQ/ReLU[relu]/4224"
+	"ZeroDCEQ/ReLU[relu]/4224" -> "ZeroDCEQ/input.31"
+	"ZeroDCEQ/input.31" -> "ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[depth_conv]/input.33"
+	"ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[depth_conv]/input.33" -> "ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[point_conv]/input.35"
+	"ZeroDCEQ/CSDN_Tem[e_conv6]/Conv2d[point_conv]/input.35" -> "ZeroDCEQ/ReLU[relu]/4266"
+	"ZeroDCEQ/ReLU[relu]/4266" -> "ZeroDCEQ/input.37"
+	"ZeroDCEQ/input.37" -> "ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[depth_conv]/input.39"
+	"ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[depth_conv]/input.39" -> "ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[point_conv]/4307"
+	"ZeroDCEQ/CSDN_Tem[e_conv7]/Conv2d[point_conv]/4307" -> "ZeroDCEQ/4308"
+	"ZeroDCEQ/4308" -> "ZeroDCEQ/7441"
+	"ZeroDCEQ/7441" -> "ZeroDCEQ/input"
+	"ZeroDCEQ/input" -> "ZeroDCEQ/UpsamplingBilinear2d[upsample]/inp"
+	"ZeroDCEQ/UpsamplingBilinear2d[upsample]/inp" -> "ZeroDCEQ/7354"
+	"ZeroDCEQ/7324" -> "ZeroDCEQ/diff"
+	"ZeroDCEQ/7445" -> "ZeroDCEQ/diff"
+	"ZeroDCEQ/diff" -> "ZeroDCEQ/7354"
+	"ZeroDCEQ/7354" -> "ZeroDCEQ/7381"
+	"ZeroDCEQ/7381" -> return_0
+}
